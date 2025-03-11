@@ -1,4 +1,4 @@
-from claude_api import Client
+from claude_cli.utils.client import EnhancedClient
 from rich.console import Console
 from rich.table import Table
 from rich import box
@@ -7,10 +7,10 @@ import sys
 
 console = Console()
 
-def list_conversations(config):
+def list_conversations(config, proxy=None):
     """List all available conversations."""
     cookie = config.get('cookie')
-    claude = Client(cookie)
+    claude = EnhancedClient(cookie, proxy=proxy)
     
     try:
         conversations = claude.list_all_conversations()
@@ -51,10 +51,10 @@ def list_conversations(config):
         console.print(f"[bold red]Error:[/] {str(e)}")
         sys.exit(1)
 
-def delete_conversation(config, conversation_id):
+def delete_conversation(config, conversation_id, proxy=None):
     """Delete a specific conversation."""
     cookie = config.get('cookie')
-    claude = Client(cookie)
+    claude = EnhancedClient(cookie, proxy=proxy)
     
     try:
         # Confirm before deleting
@@ -72,10 +72,10 @@ def delete_conversation(config, conversation_id):
         console.print(f"[bold red]Error:[/] {str(e)}")
         sys.exit(1)
 
-def rename_conversation(config, conversation_id, new_title):
+def rename_conversation(config, conversation_id, new_title, proxy=None):
     """Rename a specific conversation."""
     cookie = config.get('cookie')
-    claude = Client(cookie)
+    claude = EnhancedClient(cookie, proxy=proxy)
     
     try:
         success = claude.rename_chat(new_title, conversation_id)
@@ -87,10 +87,10 @@ def rename_conversation(config, conversation_id, new_title):
         console.print(f"[bold red]Error:[/] {str(e)}")
         sys.exit(1)
 
-def view_conversation_history(config, conversation_id):
+def view_conversation_history(config, conversation_id, proxy=None):
     """View the message history of a specific conversation."""
     cookie = config.get('cookie')
-    claude = Client(cookie)
+    claude = EnhancedClient(cookie, proxy=proxy)
     
     try:
         history = claude.chat_conversation_history(conversation_id)
