@@ -2,8 +2,6 @@
 
 A command-line interface for interacting with Claude AI.
 
-![Claude CLI Demo](https://via.placeholder.com/650x350)
-
 ## Features
 
 - Interactive chat with Claude AI in your terminal
