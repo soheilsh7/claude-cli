@@ -22,7 +22,7 @@ pip install claudeshell
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/claude-cli.git
+git clone https://github.com/soheilsh7/claude-cli.git
 cd claude-cli
 pip install -e .
 ```
