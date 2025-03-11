@@ -47,6 +47,8 @@ This will prompt you to enter your Claude cookie. Alternatively, you can set the
 6. In the Headers tab, find the Cookie header
 7. Copy the entire cookie value
 
+Visit [here](https://github.com/KoushikNavuluri/Claude-API?tab=readme-ov-file#usage) for more description on how to get your session key.
+
 ## Usage
 
 ### Interactive Chat
