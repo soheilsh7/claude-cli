@@ -2,14 +2,15 @@ import os
 import sys
 from rich.console import Console
 from rich.markdown import Markdown
-from claude_cli.utils.client import EnhancedClient  # Changed import
+from rich.panel import Panel
+from claude_cli.utils.client import EnhancedClient
 
 console = Console()
 
-def start_chat(config, new_chat=False, conversation_id=None, proxy=None):  # Added proxy parameter
+def start_chat(config, new_chat=False, conversation_id=None, proxy=None, debug=False):
     """Start an interactive chat session with Claude."""
     cookie = config.get('cookie')
-    claude = EnhancedClient(cookie, proxy=proxy)  # Use EnhancedClient with proxy support
+    claude = EnhancedClient(cookie, proxy=proxy, debug=debug)
     
     # Handle conversation ID
     if not conversation_id and not new_chat:
@@ -52,7 +53,8 @@ def start_chat(config, new_chat=False, conversation_id=None, proxy=None):  # Add
             console.print("[cyan]--- New conversation ---[/]")
     except Exception as e:
         # If we can't load history, just continue
-        pass
+        if debug:
+            console.print(f"[yellow]Warning:[/] Couldn't load history: {str(e)}")
     
     # Main chat loop
     try:
@@ -82,7 +84,18 @@ def start_chat(config, new_chat=False, conversation_id=None, proxy=None):  # Add
                 try:
                     response = claude.send_message(message, conversation_id, attachment=file_path)
                     console.print("[bold purple]Claude:[/]")
-                    console.print(Markdown(response))
+                    
+                    # Check if we got the new format with meta info
+                    if isinstance(response, dict) and "text" in response:
+                        console.print(Markdown(response["text"]))
+                        
+                        # Show response time if available
+                        if "meta" in response and "response_time_seconds" in response["meta"]:
+                            response_time = response["meta"]["response_time_seconds"]
+                            console.print(f"[dim](Response time: {response_time:.2f}s)[/dim]")
+                    else:
+                        # Legacy format
+                        console.print(Markdown(response))
                 except Exception as e:
                     console.print(f"[bold red]Error sending attachment:[/] {str(e)}")
                 continue
@@ -92,7 +105,25 @@ def start_chat(config, new_chat=False, conversation_id=None, proxy=None):  # Add
             try:
                 response = claude.send_message(user_input, conversation_id)
                 console.print("[bold purple]Claude:[/]")
-                console.print(Markdown(response))
+                
+                # Check if we got the new format with meta info
+                if isinstance(response, dict) and "text" in response:
+                    console.print(Markdown(response["text"]))
+                    
+                    # Show response time if available
+                    if "meta" in response and "response_time_seconds" in response["meta"]:
+                        response_time = response["meta"]["response_time_seconds"]
+                        model = response["meta"].get("model", "unknown")
+                        
+                        if debug:
+                            console.print(Panel(f"Response time: {response_time:.2f}s\nModel: {model}", 
+                                              title="Response Info", 
+                                              expand=False))
+                        else:
+                            console.print(f"[dim](Response time: {response_time:.2f}s)[/dim]")
+                else:
+                    # Legacy format
+                    console.print(Markdown(response))
             except Exception as e:
                 console.print(f"[bold red]Error:[/] {str(e)}")
     

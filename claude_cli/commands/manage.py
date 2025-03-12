@@ -7,10 +7,10 @@ import sys
 
 console = Console()
 
-def list_conversations(config, proxy=None):
+def list_conversations(config, proxy=None, debug=False):
     """List all available conversations."""
     cookie = config.get('cookie')
-    claude = EnhancedClient(cookie, proxy=proxy)
+    claude = EnhancedClient(cookie, proxy=proxy, debug=debug)
     
     try:
         conversations = claude.list_all_conversations()
@@ -51,10 +51,10 @@ def list_conversations(config, proxy=None):
         console.print(f"[bold red]Error:[/] {str(e)}")
         sys.exit(1)
 
-def delete_conversation(config, conversation_id, proxy=None):
+def delete_conversation(config, conversation_id, proxy=None, debug=False):
     """Delete a specific conversation."""
     cookie = config.get('cookie')
-    claude = EnhancedClient(cookie, proxy=proxy)
+    claude = EnhancedClient(cookie, proxy=proxy, debug=debug)
     
     try:
         # Confirm before deleting
@@ -72,10 +72,10 @@ def delete_conversation(config, conversation_id, proxy=None):
         console.print(f"[bold red]Error:[/] {str(e)}")
         sys.exit(1)
 
-def rename_conversation(config, conversation_id, new_title, proxy=None):
+def rename_conversation(config, conversation_id, new_title, proxy=None, debug=False):
     """Rename a specific conversation."""
     cookie = config.get('cookie')
-    claude = EnhancedClient(cookie, proxy=proxy)
+    claude = EnhancedClient(cookie, proxy=proxy, debug=debug)
     
     try:
         success = claude.rename_chat(new_title, conversation_id)
@@ -87,10 +87,10 @@ def rename_conversation(config, conversation_id, new_title, proxy=None):
         console.print(f"[bold red]Error:[/] {str(e)}")
         sys.exit(1)
 
-def view_conversation_history(config, conversation_id, proxy=None):
+def view_conversation_history(config, conversation_id, proxy=None, debug=False):
     """View the message history of a specific conversation."""
     cookie = config.get('cookie')
-    claude = EnhancedClient(cookie, proxy=proxy)
+    claude = EnhancedClient(cookie, proxy=proxy, debug=debug)
     
     try:
         history = claude.chat_conversation_history(conversation_id)

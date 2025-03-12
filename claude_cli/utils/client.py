@@ -15,16 +15,18 @@ class EnhancedClient:
     and more robust error handling.
     """
 
-    def __init__(self, cookie, proxy=None):
+    def __init__(self, cookie, proxy=None, debug=False):
         """
         Initialize the client with cookie and optional proxy.
         
         Args:
             cookie (str): Claude AI cookie
             proxy (str, optional): Proxy URL (e.g., "socks5://127.0.0.1:1080")
+            debug (bool, optional): Whether to output debug information
         """
         self.cookie = cookie
         self.proxy = proxy
+        self.debug = debug
         self.organization_id = self.get_organization_id()
 
     def get_organization_id(self):
@@ -45,6 +47,9 @@ class EnhancedClient:
         }
 
         try:
+            if self.debug:
+                print(f"Fetching organization ID from: {url}")
+                
             response = self._make_request("GET", url, headers=headers)
             
             if response.status_code != 200:
@@ -61,6 +66,10 @@ class EnhancedClient:
             if not res or len(res) == 0:
                 raise Exception("No organizations found. Your cookie may be invalid or expired.")
             uuid = res[0]['uuid']
+            
+            if self.debug:
+                print(f"Successfully retrieved organization ID: {uuid}")
+                
             return uuid
         except json.JSONDecodeError:
             raise Exception("Failed to parse organization response. The API may have changed or your cookie is invalid.")
@@ -145,7 +154,8 @@ class EnhancedClient:
             if conversation_id not in conv_ids:
                 return f"Error: Conversation ID '{conversation_id}' does not exist in your account. Please check the ID or create a new conversation."
         except Exception as e:
-            print(f"Warning: Could not verify conversation ID: {str(e)}")
+            if self.debug:
+                print(f"Warning: Could not verify conversation ID: {str(e)}")
             # Continue anyway as the ID might still be valid
 
         # Upload attachment if provided
@@ -164,8 +174,13 @@ class EnhancedClient:
         # Try different models if one fails - newer model names first
         models_to_try = ["claude-3-haiku-20240307", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-2.1", "claude-2", "claude-instant-1.2"]
         
+        # Start the timer for response time tracking
+        import time
+        start_time = time.time()
+        
         for endpoint in api_endpoints:
-            print(f"Trying endpoint: {endpoint}")
+            if self.debug:
+                print(f"Trying endpoint: {endpoint}")
             for model in models_to_try:
                 # Try different payload formats
                 payloads = [
@@ -217,7 +232,8 @@ class EnhancedClient:
                     }
 
                     try:
-                        print(f"Trying model: {model}, payload format: {payload_idx+1}")
+                        if self.debug:
+                            print(f"Trying model: {model}, payload format: {payload_idx+1}")
                         response = self._make_request("POST", endpoint, headers=headers, data=payload, timeout=timeout)
                         
                         # Check for error responses first
@@ -239,13 +255,15 @@ class EnhancedClient:
                             continue
                     
                         # Process successful response
-                        print(f"Success! Got 200 response from endpoint: {endpoint}, model: {model}")
+                        if self.debug:
+                            print(f"Success! Got 200 response from endpoint: {endpoint}, model: {model}")
                         decoded_data = response.content.decode("utf-8", errors="ignore")
                         
                         # Look for patterns in the response to detect format
                         # First, check if it's a streaming response
                         if 'data:' in decoded_data:
-                            print("Detected streaming response format")
+                            if self.debug:
+                                print("Detected streaming response format")
                             # More robust parsing of server-sent events
                             completions = []
                             for line in decoded_data.split('\n'):
@@ -271,7 +289,8 @@ class EnhancedClient:
                             answer = ''.join(completions)
                         else:
                             # Might be a regular JSON response
-                            print("Detected non-streaming response format")
+                            if self.debug:
+                                print("Detected non-streaming response format")
                             try:
                                 data = json.loads(decoded_data)
                                 # Various possible response formats
@@ -289,7 +308,8 @@ class EnhancedClient:
                         
                         # If we still couldn't extract anything, try a more aggressive approach
                         if not answer and decoded_data:
-                            print("Trying aggressive pattern matching")
+                            if self.debug:
+                                print("Trying aggressive pattern matching")
                             # Look for anything that seems like a response
                             patterns = [
                                 r'"completion"\s*:\s*"([^"]*)"',
@@ -306,21 +326,58 @@ class EnhancedClient:
                             
                         # If we got a valid response, return it!
                         if answer and len(answer.strip()) > 0:
-                            print(f"Successfully extracted answer ({len(answer)} chars)")
-                            return answer
+                            # Calculate response time
+                            end_time = time.time()
+                            response_time = end_time - start_time
+                            
+                            if self.debug:
+                                print(f"Successfully extracted answer ({len(answer)} chars)")
+                                print(f"Response time: {response_time:.2f} seconds")
+                                
+                            # Add a meta field with response information
+                            result = {
+                                "text": answer,
+                                "meta": {
+                                    "response_time_seconds": round(response_time, 2),
+                                    "model": model,
+                                    "endpoint": endpoint,
+                                    "characters": len(answer)
+                                }
+                            }
+                            return result
                         
                         # If we get here, we got a 200 response but couldn't extract the answer
-                        print("Got 200 response but couldn't extract answer")
+                        if self.debug:
+                            print("Got 200 response but couldn't extract answer")
                         if payload_idx == len(payloads) - 1 and model == models_to_try[-1] and endpoint == api_endpoints[-1]:
-                            return f"Got response from Claude but couldn't extract the answer. Raw data:\n\n{decoded_data[:1000]}"
+                            end_time = time.time()
+                            response_time = end_time - start_time
+                            error_msg = f"Got response from Claude but couldn't extract the answer. Raw data:\n\n{decoded_data[:1000]}"
+                            return {
+                                "text": error_msg,
+                                "meta": {
+                                    "response_time_seconds": round(response_time, 2),
+                                    "error": True
+                                }
+                            }
                     
                     except Exception as e:
-                        print(f"Exception with endpoint {endpoint}, model {model}, payload {payload_idx+1}: {str(e)}")
+                        if self.debug:
+                            print(f"Exception with endpoint {endpoint}, model {model}, payload {payload_idx+1}: {str(e)}")
                         # Continue to next payload format
                         continue
         
         # This should only be reached if all endpoints, models, and payload formats failed
-        return "All communication attempts with Claude failed. The Claude.ai API may have changed significantly. Please check for updates to the client library or try refreshing your cookie."
+        end_time = time.time()
+        response_time = end_time - start_time
+        error_msg = "All communication attempts with Claude failed. The Claude.ai API may have changed significantly. Please check for updates to the client library or try refreshing your cookie."
+        return {
+            "text": error_msg,
+            "meta": {
+                "response_time_seconds": round(response_time, 2),
+                "error": True
+            }
+        }
 
     def delete_conversation(self, conversation_id):
         """Delete a conversation."""
@@ -377,19 +434,24 @@ class EnhancedClient:
 
         for endpoint in endpoints:
             try:
-                print(f"Trying to get history from: {endpoint}")
+                if self.debug:
+                    print(f"Trying to get history from: {endpoint}")
                 response = self._make_request("GET", endpoint, headers=headers)
                 
                 if response.status_code == 200:
-                    print(f"Success! Got history from: {endpoint}")
+                    if self.debug:
+                        print(f"Success! Got history from: {endpoint}")
                     return json.loads(response.text)
                 else:
-                    print(f"Failed with status {response.status_code} from: {endpoint}")
+                    if self.debug:
+                        print(f"Failed with status {response.status_code} from: {endpoint}")
             except json.JSONDecodeError:
-                print(f"JSON decode error from: {endpoint}")
+                if self.debug:
+                    print(f"JSON decode error from: {endpoint}")
                 continue
             except Exception as e:
-                print(f"Exception from {endpoint}: {str(e)}")
+                if self.debug:
+                    print(f"Exception from {endpoint}: {str(e)}")
                 continue
                 
         # If we get here, all endpoints failed

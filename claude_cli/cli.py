@@ -22,7 +22,8 @@ def cli():
 @click.option("--new", is_flag=True, help="Start a new conversation")
 @click.option("--id", help="Continue an existing conversation by ID")
 @click.option("--proxy", help="Proxy URL (e.g., socks5://127.0.0.1:1080)")
-def chat(new, id, proxy):
+@click.option("--debug", is_flag=True, help="Show debug information")
+def chat(new, id, proxy, debug):
     """Start an interactive chat session with Claude"""
     config = load_config()
     if not config.get('cookie'):
@@ -33,7 +34,7 @@ def chat(new, id, proxy):
     if not proxy and 'proxy' in config:
         proxy = config.get('proxy')
         
-    start_chat(config, new_chat=new, conversation_id=id, proxy=proxy)
+    start_chat(config, new_chat=new, conversation_id=id, proxy=proxy, debug=debug)
 
 @cli.command()
 @click.argument("prompt")
@@ -41,7 +42,8 @@ def chat(new, id, proxy):
 @click.option("--attachment", "-a", help="Path to a file to attach")
 @click.option("--markdown/--no-markdown", default=True, help="Render output as markdown")
 @click.option("--proxy", help="Proxy URL (e.g., socks5://127.0.0.1:1080)")
-def query(prompt, id, attachment, markdown, proxy):
+@click.option("--debug", is_flag=True, help="Show debug information")
+def query(prompt, id, attachment, markdown, proxy, debug):
     """Send a one-off query to Claude"""
     config = load_config()
     if not config.get('cookie'):
@@ -52,7 +54,7 @@ def query(prompt, id, attachment, markdown, proxy):
     if not proxy and 'proxy' in config:
         proxy = config.get('proxy')
         
-    response = send_query(config, prompt, conversation_id=id, attachment=attachment, proxy=proxy)
+    response = send_query(config, prompt, conversation_id=id, attachment=attachment, proxy=proxy, debug=debug)
     
     if markdown:
         console.print(Markdown(response))
@@ -61,7 +63,8 @@ def query(prompt, id, attachment, markdown, proxy):
 
 @cli.command()
 @click.option("--proxy", help="Proxy URL (e.g., socks5://127.0.0.1:1080)")
-def list(proxy):
+@click.option("--debug", is_flag=True, help="Show debug information")
+def list(proxy, debug):
     """List all your Claude conversations"""
     config = load_config()
     if not config.get('cookie'):
@@ -72,12 +75,13 @@ def list(proxy):
     if not proxy and 'proxy' in config:
         proxy = config.get('proxy')
         
-    list_conversations(config, proxy=proxy)
+    list_conversations(config, proxy=proxy, debug=debug)
 
 @cli.command()
 @click.argument("conversation_id")
 @click.option("--proxy", help="Proxy URL (e.g., socks5://127.0.0.1:1080)")
-def delete(conversation_id, proxy):
+@click.option("--debug", is_flag=True, help="Show debug information")
+def delete(conversation_id, proxy, debug):
     """Delete a conversation by ID"""
     config = load_config()
     if not config.get('cookie'):
@@ -88,13 +92,14 @@ def delete(conversation_id, proxy):
     if not proxy and 'proxy' in config:
         proxy = config.get('proxy')
         
-    delete_conversation(config, conversation_id, proxy=proxy)
+    delete_conversation(config, conversation_id, proxy=proxy, debug=debug)
 
 @cli.command()
 @click.argument("conversation_id")
 @click.argument("new_title")
 @click.option("--proxy", help="Proxy URL (e.g., socks5://127.0.0.1:1080)")
-def rename(conversation_id, new_title, proxy):
+@click.option("--debug", is_flag=True, help="Show debug information")
+def rename(conversation_id, new_title, proxy, debug):
     """Rename a conversation"""
     config = load_config()
     if not config.get('cookie'):
@@ -105,7 +110,7 @@ def rename(conversation_id, new_title, proxy):
     if not proxy and 'proxy' in config:
         proxy = config.get('proxy')
         
-    rename_conversation(config, conversation_id, new_title, proxy=proxy)
+    rename_conversation(config, conversation_id, new_title, proxy=proxy, debug=debug)
 
 @cli.command()
 @click.option("--cookie", help="Claude AI cookie")
