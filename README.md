@@ -108,6 +108,66 @@ claude rename <conversation_id> "New Title"
 - `claude rename`: Rename a conversation
 - `claude config`: Configure settings
 
+# Using Claude Terminal with a Proxy
+
+Claude Terminal now includes built-in proxy support, so you don't need to use external tools like `proxychains`. Here's how to use it:
+
+## Setting a Default Proxy
+
+You can configure a default proxy that will be used for all commands:
+
+```bash
+claude config --proxy socks5://127.0.0.1:2080
+```
+
+This saves the proxy in your config file (~/.config/claude-terminal/config.yaml).
+
+To remove the default proxy:
+
+```bash
+claude config --proxy ""
+```
+
+## Using a One-Time Proxy
+
+You can also specify a proxy for a single command:
+
+```bash
+claude chat --proxy socks5://127.0.0.1:2080
+claude query "Hello" --proxy socks5://127.0.0.1:2080
+claude list --proxy socks5://127.0.0.1:2080
+```
+
+The `--proxy` parameter takes precedence over any default proxy configured.
+
+## Supported Proxy Formats
+
+- SOCKS5: `socks5://127.0.0.1:1080`
+- SOCKS4: `socks4://127.0.0.1:1080`
+- HTTP: `http://127.0.0.1:8080`
+- HTTPS: `https://127.0.0.1:8080`
+
+## Authentication
+
+If your proxy requires authentication, include username and password:
+
+```
+socks5://username:password@127.0.0.1:1080
+```
+
+## Troubleshooting
+
+If you encounter issues with the proxy:
+
+1. Verify your proxy is running correctly
+2. Check that the proxy URL format is correct
+3. Ensure your proxy allows connections to claude.ai
+4. Try with verbose output: `claude chat --proxy your_proxy_url --verbose`
+
+## Security Note
+
+Proxy settings are stored in plain text in your config file. If this is a concern, use the command-line `--proxy` parameter instead of the saved configuration.
+
 ## Dependencies
 
 - [claude-api](https://github.com/KoushikNavuluri/Claude-API): Unofficial Claude API
