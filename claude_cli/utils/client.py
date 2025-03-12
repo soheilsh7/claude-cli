@@ -411,13 +411,8 @@ class EnhancedClient:
             return False
 
     def chat_conversation_history(self, conversation_id):
-        """Get conversation history using multiple potential endpoints."""
-        # Try multiple potential endpoints
-        endpoints = [
-            f"https://claude.ai/api/organizations/{self.organization_id}/chat_conversations/{conversation_id}",
-            f"https://claude.ai/api/conversations/{conversation_id}",
-            f"https://claude.ai/api/organizations/{self.organization_id}/conversations/{conversation_id}"
-        ]
+        """Get conversation history."""
+        url = f"https://claude.ai/api/organizations/{self.organization_id}/chat_conversations/{conversation_id}"
 
         headers = {
             'User-Agent':
@@ -432,30 +427,35 @@ class EnhancedClient:
             'Cookie': f'{self.cookie}'
         }
 
-        for endpoint in endpoints:
-            try:
-                if self.debug:
-                    print(f"Trying to get history from: {endpoint}")
-                response = self._make_request("GET", endpoint, headers=headers)
+        try:
+            if self.debug:
+                print(f"Fetching conversation history from: {url}")
                 
-                if response.status_code == 200:
-                    if self.debug:
-                        print(f"Success! Got history from: {endpoint}")
-                    return json.loads(response.text)
-                else:
-                    if self.debug:
-                        print(f"Failed with status {response.status_code} from: {endpoint}")
-            except json.JSONDecodeError:
+            response = self._make_request("GET", url, headers=headers)
+            
+            if response.status_code == 200:
+                return json.loads(response.text)
+            else:
+                error_msg = f"Failed to get conversation history: HTTP {response.status_code}"
+                try:
+                    error_data = json.loads(response.content)
+                    if 'error' in error_data:
+                        error_msg += f" - {error_data['error'].get('message', '')}"
+                except:
+                    pass
+                    
                 if self.debug:
-                    print(f"JSON decode error from: {endpoint}")
-                continue
-            except Exception as e:
-                if self.debug:
-                    print(f"Exception from {endpoint}: {str(e)}")
-                continue
-                
-        # If we get here, all endpoints failed
-        return {"error": "Failed to get conversation history from all known endpoints. The API may have changed."}
+                    print(error_msg)
+                    
+                return {"error": error_msg}
+        except json.JSONDecodeError:
+            if self.debug:
+                print("Failed to parse conversation history JSON")
+            return {"error": "Failed to parse conversation history"}
+        except Exception as e:
+            if self.debug:
+                print(f"Exception fetching history: {str(e)}")
+            return {"error": f"Failed to get conversation history: {str(e)}"}
 
     def generate_uuid(self):
         """Generate a UUID for a new conversation."""
