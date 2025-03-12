@@ -142,8 +142,6 @@ class EnhancedClient:
         """Send a message to Claude with robust error handling."""
         # Try different API endpoints - Claude periodically changes these
         api_endpoints = [
-            "https://claude.ai/api/append_message",
-            f"https://claude.ai/api/organizations/{self.organization_id}/chat_conversations/{conversation_id}/message",
             f"https://claude.ai/api/organizations/{self.organization_id}/chat_conversations/{conversation_id}/completion"
         ]
         
@@ -172,7 +170,7 @@ class EnhancedClient:
             attachments = []
 
         # Try different models if one fails - newer model names first
-        models_to_try = ["claude-3-haiku-20240307", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-2.1", "claude-2", "claude-instant-1.2"]
+        models_to_try = ["claude"]
         
         # Start the timer for response time tracking
         import time
@@ -184,26 +182,6 @@ class EnhancedClient:
             for model in models_to_try:
                 # Try different payload formats
                 payloads = [
-                    # Original format
-                    json.dumps({
-                        "completion": {
-                            "prompt": f"{prompt}",
-                            "timezone": "UTC",
-                            "model": model
-                        },
-                        "organization_uuid": f"{self.organization_id}",
-                        "conversation_uuid": f"{conversation_id}",
-                        "text": f"{prompt}",
-                        "attachments": attachments
-                    }),
-                    # Alternative format (newer API)
-                    json.dumps({
-                        "model": model,
-                        "prompt": f"{prompt}",
-                        "conversation_uuid": f"{conversation_id}",
-                        "organization_uuid": f"{self.organization_id}",
-                        "attachments": attachments
-                    }),
                     # Simplified format
                     json.dumps({
                         "prompt": f"{prompt}",
