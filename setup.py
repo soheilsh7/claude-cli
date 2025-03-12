@@ -6,7 +6,7 @@ long_description = (base_path / "README.md").read_text()
 
 setup(
     name='claudeshell',
-    version='0.1.0',
+    version='0.2.0',
     author='soheil shabani',
     author_email='soheilshabani.79.ss@gmail.com',
     license="MIT",
