@@ -1,15 +1,15 @@
 import os
 import sys
-from claude_api import Client
 from rich.console import Console
 from rich.markdown import Markdown
+from claude_cli.utils.client import EnhancedClient  # Changed import
 
 console = Console()
 
-def start_chat(config, new_chat=False, conversation_id=None):
+def start_chat(config, new_chat=False, conversation_id=None, proxy=None):  # Added proxy parameter
     """Start an interactive chat session with Claude."""
     cookie = config.get('cookie')
-    claude = Client(cookie)
+    claude = EnhancedClient(cookie, proxy=proxy)  # Use EnhancedClient with proxy support
     
     # Handle conversation ID
     if not conversation_id and not new_chat:
